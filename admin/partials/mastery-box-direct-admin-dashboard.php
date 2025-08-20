@@ -1,3 +1,5 @@
+<?php if ( ! defined( 'ABSPATH' ) ) { exit; }
+?>
 <?php if (!defined('WPINC')) die; ?>
 
 <div class="wrap mastery-box-dashboard">

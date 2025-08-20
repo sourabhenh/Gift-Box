@@ -72,16 +72,21 @@
         }, 2000);
     }
 
+    
     function redirectToResultPage() {
-        var resultPageUrl = '/game-result/';
-        // Try to find a result page automatically
-        var possibleUrls = ['/game-result/', '/result/', '/results/', '/direct-result/'];
-
-        // For now, just show results inline
-        showGameResultInline();
+        var url = (typeof mastery_box_direct_ajax !== 'undefined' && mastery_box_direct_ajax.result_page_url)
+            ? mastery_box_direct_ajax.result_page_url
+            : '/game-result/';
+        if (!url) {
+            // Fallbacks
+            var candidates = ['/game-result/', '/result/', '/results/', '/direct-result/'];
+            url = candidates[0];
+        }
+        // Bust cache and go
+        var sep = url.indexOf('?') === -1 ? '?' : '&';
+        window.location.href = url + sep + 't=' + Date.now();
     }
-
-    function showGameResultInline() {
+function showGameResultInline() {
         var $resultDiv = $('#mastery-box-result');
         var $playAgainBtn = $('#play-again-btn');
 

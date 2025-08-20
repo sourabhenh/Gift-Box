@@ -1,3 +1,5 @@
+<?php if ( ! defined( 'ABSPATH' ) ) { exit; }
+?>
 <?php if (!defined('WPINC')) die; ?>
 <div class="wrap mastery-box-settings-sections">
   <h1><?php echo esc_html__('Settings', 'mastery-box-direct'); ?></h1>

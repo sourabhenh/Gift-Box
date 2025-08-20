@@ -1,3 +1,5 @@
+<?php if ( ! defined( 'ABSPATH' ) ) { exit; }
+?>
 <?php /** * The public-facing functionality of the plugin. */
 class Mastery_Box_Direct_Public {
     private $plugin_name;
@@ -7,13 +9,55 @@ class Mastery_Box_Direct_Public {
         $this->version = $version;
     }
     public function enqueue_styles() {
+        if ( is_admin() ) { return; }
+        $should = false;
+        if ( is_singular() ) {
+            $post = get_post();
+            if ( $post ) {
+                $should = ( has_shortcode( $post->post_content, 'masterybox_direct_game' ) || has_shortcode( $post->post_content, 'masterybox_direct_result' ) );
+            }
+        }
+        if ( ! $should ) { return; }
+
         wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/mastery-box-direct-public.css', array(), $this->version, 'all' );
     }
     public function enqueue_scripts() {
-        wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/mastery-box-direct-public.js', array( 'jquery' ), $this->version, false ); // Fixed redirect target: your result page slug is /game-result/ 
+        if ( is_admin() ) { return; }
+        $should = false;
+        if ( is_singular() ) {
+            $post = get_post();
+            if ( $post ) {
+                $should = ( has_shortcode( $post->post_content, 'masterybox_direct_game' ) || has_shortcode( $post->post_content, 'masterybox_direct_result' ) );
+            }
+        }
+        if ( ! $should ) { return; }
 
-        $results_page_url = home_url( '/game-result/' );
-        wp_localize_script( $this->plugin_name, 'mastery_box_direct_ajax', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'mastery_box_direct_nonce' ), 'number_of_boxes' => get_option( 'mastery_box_direct_number_of_boxes', 3 ), 'win_message' => get_option( 'mastery_box_direct_win_message', __( 'Congratulations! You won!', 'mastery-box-direct' ) ), 'lose_message' => get_option( 'mastery_box_direct_lose_message', __( 'Better luck next time!', 'mastery-box-direct' ) ), 'result_page_url' => $results_page_url, ) );
+        wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/mastery-box-direct-public.js', array('jquery'), $this->version, true );
+
+        // Try to locate a page containing the result shortcode; fall back to /game-result/
+        $result_url = '';
+        $pages = get_pages( array( 'post_status' => array('publish') ) );
+        if ( !empty( $pages ) ) {
+            foreach ( $pages as $p ) {
+                if ( strpos( $p->post_content, '[masterybox_direct_result]' ) !== false ) {
+                    $result_url = get_permalink( $p->ID );
+                    break;
+                }
+            }
+        }
+        if ( empty( $result_url ) ) {
+            $result_url = home_url( '/game-result/' );
+        }
+
+        wp_localize_script(
+            $this->plugin_name,
+            'mastery_box_direct_ajax',
+            array(
+                'ajax_url' => admin_url( 'admin-ajax.php' ),
+                'nonce'    => wp_create_nonce( 'mastery_box_direct_nonce' ),
+                'result_page_url' => $result_url,
+            )
+        );
     }
     public function init_shortcodes() {
         add_shortcode( 'masterybox_direct_game', array( $this, 'display_game_shortcode' ) );
@@ -69,11 +113,11 @@ class Mastery_Box_Direct_Public {
             if ( !empty( $result[ 'is_winner' ] ) ) {
                 echo '<h2>' . esc_html( $win_message ) . '</h2>';
                 if ( !empty( $result[ 'gift_image' ] ) ) {
-                    echo '<div class="gift-image" style="margin:12px 0;"><img src="' . esc_url( $result[ 'gift_image' ] ) . '" alt="' . esc_attr( $result[ 'gift_name' ] ?? 'Gift' ) . '" style="max-width:220px;height:auto;display:block;border:1px solid #ddd;padding:4px;background:#fff;"></div>';
+                    echo '<div class="gift-image"><img src="' . esc_url( $result[ 'gift_image' ] ) . '" alt="' . esc_attr( $result[ 'gift_name' ] ?? 'Gift' ) . '"></div>';
                 }
                 echo '<div class="winner-details">';
                 if ( !empty( $result[ 'gift_name' ] ) ) {
-                    echo '<p><strong>' . esc_html( $result[ 'gift_name' ] ) . '</strong></p>';
+                    echo '<p>' . esc_html( $result[ 'gift_name' ] ) . '</p>';
                 }
                 if ( !empty( $result[ 'message' ] ) ) {
                     echo '<p>' . esc_html( $result[ 'message' ] ) . '</p>';

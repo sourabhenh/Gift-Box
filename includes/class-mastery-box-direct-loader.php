@@ -1,3 +1,5 @@
+<?php if ( ! defined( 'ABSPATH' ) ) { exit; }
+?>
 <?php
 /**
  * Register all actions and filters for the plugin
